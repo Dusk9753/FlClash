@@ -98,3 +98,144 @@ class XboardSubscribeInfo {
     );
   }
 }
+
+class XboardAnnouncement {
+  const XboardAnnouncement({
+    required this.id,
+    required this.title,
+    required this.content,
+  });
+  final int id;
+  final String title;
+  final String content;
+
+  factory XboardAnnouncement.fromJson(Map<String, dynamic> json) =>
+      XboardAnnouncement(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        title: json['title']?.toString() ?? '',
+        content: json['content']?.toString() ?? json['body']?.toString() ?? '',
+      );
+}
+
+class XboardAnnouncementPage {
+  const XboardAnnouncementPage({required this.items, required this.total});
+
+  final List<XboardAnnouncement> items;
+  final int total;
+
+  factory XboardAnnouncementPage.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    if (data is! List) throw const FormatException('公告响应格式错误');
+    return XboardAnnouncementPage(
+      items: data
+          .whereType<Map>()
+          .map(
+            (item) =>
+                XboardAnnouncement.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      total: (json['total'] as num?)?.toInt() ?? data.length,
+    );
+  }
+}
+
+class XboardPaymentMethod {
+  const XboardPaymentMethod({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.fixedFee,
+    required this.percentFee,
+  });
+
+  final int id;
+  final String name;
+  final String icon;
+  final int fixedFee;
+  final double percentFee;
+
+  factory XboardPaymentMethod.fromJson(Map<String, dynamic> json) =>
+      XboardPaymentMethod(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        name: json['name']?.toString() ?? '支付方式',
+        icon: json['icon']?.toString() ?? '',
+        fixedFee: (json['handling_fee_fixed'] as num?)?.toInt() ?? 0,
+        percentFee: (json['handling_fee_percent'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class XboardCheckoutResult {
+  const XboardCheckoutResult({required this.type, required this.data});
+
+  final int type;
+  final dynamic data;
+
+  factory XboardCheckoutResult.fromJson(Map<String, dynamic> json) =>
+      XboardCheckoutResult(
+        type: (json['type'] as num?)?.toInt() ?? -99,
+        data: json['data'],
+      );
+}
+
+class XboardPlan {
+  const XboardPlan({
+    required this.id,
+    required this.name,
+    required this.content,
+    required this.prices,
+    required this.sell,
+  });
+  final int id;
+  final String name;
+  final String content;
+  final Map<String, int> prices;
+  final bool sell;
+
+  String orderPeriodFor(String priceKey) => priceKey;
+
+  factory XboardPlan.fromJson(Map<String, dynamic> json) {
+    final prices = <String, int>{};
+    const legacyKeys = [
+      'month_price',
+      'quarter_price',
+      'half_year_price',
+      'year_price',
+      'two_year_price',
+      'three_year_price',
+      'onetime_price',
+      'reset_price',
+    ];
+    const currentToLegacy = {
+      'monthly': 'month_price',
+      'quarterly': 'quarter_price',
+      'half_yearly': 'half_year_price',
+      'yearly': 'year_price',
+      'two_yearly': 'two_year_price',
+      'three_yearly': 'three_year_price',
+      'onetime': 'onetime_price',
+      'reset_traffic': 'reset_price',
+    };
+
+    for (final key in legacyKeys) {
+      final value = json[key];
+      if (value is num && value > 0) prices[key] = value.toInt();
+    }
+    final nestedPrices = json['prices'];
+    if (nestedPrices is Map) {
+      for (final entry in nestedPrices.entries) {
+        final legacyKey = currentToLegacy[entry.key.toString()];
+        final value = entry.value;
+        if (legacyKey != null && value is num && value > 0) {
+          prices[legacyKey] = (value * 100).round();
+        }
+      }
+    }
+    return XboardPlan(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      name: json['name']?.toString() ?? '套餐',
+      content: json['content']?.toString() ?? '',
+      prices: prices,
+      sell: json['sell'] != false,
+    );
+  }
+}

@@ -6,7 +6,7 @@ on:
       app_env:
         description: Application environment
         required: true
-        default: pre
+        default: stable
         type: choice
         options: [dev, pre, stable]
       android_arch:
@@ -43,6 +43,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.12'
+          cache: true
       - name: Setup NDK
         uses: nttld/setup-ndk@v1
         with:

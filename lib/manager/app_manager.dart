@@ -115,6 +115,7 @@ class AppEnvManager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (globalState.appEnv == 'stable') return child;
     if (kDebugMode) {
       if (globalState.isPre) {
         return Banner(

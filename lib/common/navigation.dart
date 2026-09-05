@@ -19,6 +19,16 @@ class Navigation {
             const DashboardView(key: GlobalObjectKey(PageLabel.dashboard)),
       ),
       NavigationItem(
+        icon: const Icon(Icons.campaign_outlined),
+        label: PageLabel.announcements,
+        builder: (_) => const XboardAnnouncementsView(),
+      ),
+      NavigationItem(
+        icon: const Icon(Icons.storefront_outlined),
+        label: PageLabel.store,
+        builder: (_) => const XboardStoreView(),
+      ),
+      NavigationItem(
         icon: const Icon(Icons.article),
         label: PageLabel.proxies,
         builder: (_) =>

@@ -17,9 +17,7 @@ final _log = Logger('go_builder');
 
 String _resolveCc(Target target) {
   final ndk = Environment.androidNdk;
-  final prebuiltDir = Directory(
-    p.join(ndk, 'toolchains', 'llvm', 'prebuilt'),
-  );
+  final prebuiltDir = Directory(p.join(ndk, 'toolchains', 'llvm', 'prebuilt'));
   final entries = prebuiltDir
       .listSync()
       .where((e) => !p.basename(e.path).startsWith('.'))
@@ -45,6 +43,10 @@ class GoBuilder {
 
   String get _corePath => p.join(rootDir, config.coreDir);
   String get _outputPath => p.join(rootDir, config.outputDir);
+  String get _goExecutable =>
+      Platform.environment['GO']?.trim().isNotEmpty == true
+      ? Platform.environment['GO']!.trim()
+      : 'go';
 
   Future<BuildExecution> build(Target target, {bool force = false}) async {
     // Desktop: output directly to libclash/{platform}/
@@ -77,7 +79,7 @@ class GoBuilder {
         _log.info(kSeparator);
 
         await runCommandStream(
-          'go',
+          _goExecutable,
           args,
           workingDirectory: _corePath,
           environment: env,
@@ -113,10 +115,7 @@ class GoBuilder {
   }
 
   Map<String, String> _buildEnvironment(Target target) {
-    final env = <String, String>{
-      'GOOS': target.goos,
-      'GOARCH': target.goarch,
-    };
+    final env = <String, String>{'GOOS': target.goos, 'GOARCH': target.goarch};
     if (target.isLib) {
       env
         ..['CGO_ENABLED'] = '1'
@@ -129,12 +128,12 @@ class GoBuilder {
   }
 
   List<String> _buildArguments(Target target, {String? outFile}) => [
-        'build',
-        '-ldflags=${config.goLdflags}',
-        '-tags=${config.tags}',
-        if (target.isLib) '-buildmode=c-shared',
-        if (outFile != null) ...['-o', outFile],
-      ];
+    'build',
+    '-ldflags=${config.goLdflags}',
+    '-tags=${config.tags}',
+    if (target.isLib) '-buildmode=c-shared',
+    if (outFile != null) ...['-o', outFile],
+  ];
 
   Future<String> _calculateFingerprint(Target target) async {
     final env = _buildEnvironment(target);
@@ -153,7 +152,7 @@ class GoBuilder {
       ..addValue('arguments', _buildArguments(target));
 
     final goVersion = runCommand(
-      'go',
+      _goExecutable,
       ['version'],
       workingDirectory: _corePath,
       environment: env,
@@ -161,7 +160,7 @@ class GoBuilder {
     builder.addValue('go_version', (goVersion.stdout as String).trim());
 
     final goEnvResult = runCommand(
-      'go',
+      _goExecutable,
       [
         'env',
         '-json',
@@ -217,7 +216,7 @@ class GoBuilder {
     const template =
         r'''{{range .GoFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .CgoFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .CFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .CXXFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .MFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .HFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .FFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SwigFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SwigCXXFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .SysoFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{range .EmbedFiles}}{{$.Dir}}/{{.}}{{"\n"}}{{end}}{{with .Module}}{{if .GoMod}}{{.GoMod}}{{"\n"}}{{end}}{{end}}''';
     final result = runCommand(
-      'go',
+      _goExecutable,
       ['list', '-deps', '-tags=${config.tags}', '-f', template, '.'],
       workingDirectory: _corePath,
       environment: environment,
@@ -256,11 +255,20 @@ class GoBuilder {
     required String libName,
   }) async {
     final includesPath = p.join(outDir, 'includes', archName);
-    final androidCoreMainPath =
-        p.join(rootDir, 'android', 'core', 'src', 'main');
+    final androidCoreMainPath = p.join(
+      rootDir,
+      'android',
+      'core',
+      'src',
+      'main',
+    );
     final jniLibsPath = p.join(androidCoreMainPath, 'jniLibs', abiDir);
-    final cppIncludesPath =
-        p.join(androidCoreMainPath, 'cpp', 'includes', archName);
+    final cppIncludesPath = p.join(
+      androidCoreMainPath,
+      'cpp',
+      'includes',
+      archName,
+    );
     final outputs = <String>[];
 
     ensureDir(jniLibsPath);

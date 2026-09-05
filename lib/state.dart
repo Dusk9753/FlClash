@@ -59,7 +59,7 @@ class GlobalState {
   }
 
   Future<ProviderContainer> init(int version) async {
-    appEnv = const String.fromEnvironment('APP_ENV', defaultValue: 'pre');
+    appEnv = const String.fromEnvironment('APP_ENV', defaultValue: 'stable');
     await _initDynamicColor();
     return _initData(version);
   }

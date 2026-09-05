@@ -5,10 +5,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FLUTTER_BIN="${FLUTTER_BIN:-flutter}"
 TARGET="${1:-android}"
 ARCH="${ANDROID_ARCH:-arm64}"
-ENVIRONMENT="${APP_ENV:-pre}"
+ENVIRONMENT="${APP_ENV:-stable}"
 
 cd "$ROOT_DIR"
 export PATH="$(dirname "$(command -v "$FLUTTER_BIN")"):$PATH"
+export GO="${GO:-$(command -v go)}"
 mkdir -p dist
 
 case "$TARGET" in
