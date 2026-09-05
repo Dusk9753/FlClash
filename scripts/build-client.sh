@@ -9,15 +9,30 @@ ENVIRONMENT="${APP_ENV:-pre}"
 
 cd "$ROOT_DIR"
 export PATH="$(dirname "$(command -v "$FLUTTER_BIN")"):$PATH"
+mkdir -p dist
 
 case "$TARGET" in
   android)
     "$FLUTTER_BIN" pub get
-    dart setup.dart android --arch "$ARCH" --env "$ENVIRONMENT" -v
+    case "$ARCH" in
+      arm64) ABI="android-arm64" ;;
+      arm) ABI="android-arm" ;;
+      amd64) ABI="android-x64" ;;
+      *) printf 'Unsupported Android ABI: %s\n' "$ARCH" >&2; exit 2 ;;
+    esac
+    "$FLUTTER_BIN" build apk --release --split-per-abi --target-platform "$ABI" \
+      --dart-define=APP_ENV="$ENVIRONMENT"
+    cp build/app/outputs/flutter-apk/app-"$ABI"-release.apk \
+      dist/xiaohuojian-android-"$ARCH".apk
     ;;
   windows)
     "$FLUTTER_BIN" pub get
-    dart setup.dart windows --env "$ENVIRONMENT" -v
+    "$FLUTTER_BIN" build windows --release --dart-define=APP_ENV="$ENVIRONMENT"
+    if command -v zip >/dev/null 2>&1; then
+      (cd build/windows/x64/runner && zip -qr "$ROOT_DIR/dist/xiaohuojian-windows-amd64.zip" Release)
+    else
+      powershell -NoProfile -Command "Compress-Archive -Path build/windows/x64/runner/Release -DestinationPath dist/xiaohuojian-windows-amd64.zip -Force"
+    fi
     ;;
   *)
     printf 'Usage: %s {android|windows}\n' "$0" >&2
@@ -26,9 +41,4 @@ case "$TARGET" in
 esac
 
 printf '\nBuild artifacts:\n'
-if [[ -d dist ]]; then
-  find dist -maxdepth 1 -type f -printf '%f\n' | sort
-else
-  printf 'dist directory was not created\n' >&2
-  exit 1
-fi
+find dist -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
