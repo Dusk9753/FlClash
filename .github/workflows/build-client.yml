@@ -1,0 +1,85 @@
+name: Build client packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_env:
+        description: Application environment
+        required: true
+        default: pre
+        type: choice
+        options: [dev, pre, stable]
+      android_arch:
+        description: Android ABI
+        required: true
+        default: arm64
+        type: choice
+        options: [arm64, arm, amd64]
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.44.4'
+  APP_ENV: ${{ inputs.app_env }}
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28c
+          add-to-path: true
+          link-to-sdk: true
+      - name: Build APK
+        env:
+          ANDROID_ARCH: ${{ inputs.android_arch }}
+        run: bash scripts/build-client.sh android
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaohuojian-android-${{ inputs.android_arch }}
+          path: dist/*android*apk
+          if-no-files-found: error
+
+  windows:
+    name: Windows package
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Enable git long paths
+        shell: pwsh
+        run: git config --global core.longpaths true
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Build Windows package
+        shell: bash
+        run: bash scripts/build-client.sh windows
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaohuojian-windows-amd64
+          path: |
+            dist/*windows*zip
+            dist/*windows*exe
+          if-no-files-found: error

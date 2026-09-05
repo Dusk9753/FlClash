@@ -72,6 +72,42 @@ class ProxiesAction extends _$ProxiesAction {
     ref.read(delayDataSourceProvider.notifier).setDelay(delay);
   }
 
+  Future<bool> autoConnect() async {
+    final groups = ref.read(groupsProvider);
+    if (groups.isEmpty) return false;
+    final preferred = [
+      GroupType.URLTest,
+      GroupType.Selector,
+      GroupType.Fallback,
+    ];
+    final group = groups.firstWhere(
+      (item) => preferred.contains(item.type) && item.all.isNotEmpty,
+      orElse: () => groups.firstWhere(
+        (item) => item.all.isNotEmpty,
+        orElse: () => groups.first,
+      ),
+    );
+    if (group.all.isEmpty) return false;
+
+    final testUrl = group.testUrl ?? ref.read(appSettingProvider).testUrl;
+    final results = await Future.wait(
+      group.all.map((proxy) async {
+        try {
+          final delay = await coreController.getDelay(testUrl, proxy.name);
+          ref.read(proxiesActionProvider.notifier).setDelay(delay);
+          return delay.value != null && delay.value! > 0 ? delay : null;
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+    final fastest = results.whereType<Delay>().toList()
+      ..sort((a, b) => a.value!.compareTo(b.value!));
+    if (fastest.isEmpty) return false;
+    await changeProxy(groupName: group.name, proxyName: fastest.first.name);
+    return true;
+  }
+
   Future<void> changeProxy({
     required String groupName,
     required String proxyName,

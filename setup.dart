@@ -172,8 +172,16 @@ Future<int> _package(
     return activateResult.exitCode;
   }
 
+  final flutterDistributor = Platform.isWindows
+      ? 'flutter_distributor.bat'
+      : p.join(
+          Platform.environment['PUB_CACHE'] ??
+              p.join(Platform.environment['HOME'] ?? '', '.pub-cache'),
+          'bin',
+          'flutter_distributor',
+        );
   final process = await Process.start(
-    'flutter_distributor',
+    flutterDistributor,
     [
       'package',
       '--skip-clean',

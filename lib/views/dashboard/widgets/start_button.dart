@@ -115,8 +115,25 @@ class _StartButtonState extends ConsumerState<StartButton>
     super.dispose();
   }
 
-  void handleSwitchStart() {
-    ref.read(commonActionProvider.notifier).toggleRunning();
+  bool _isConnecting = false;
+
+  Future<void> handleSwitchStart() async {
+    if (_isConnecting) return;
+    if (ref.read(isStartProvider)) {
+      ref.read(commonActionProvider.notifier).toggleRunning();
+      return;
+    }
+    setState(() => _isConnecting = true);
+    try {
+      final connected = await ref
+          .read(proxiesActionProvider.notifier)
+          .autoConnect();
+      if (mounted && connected) {
+        ref.read(commonActionProvider.notifier).toggleRunning();
+      }
+    } finally {
+      if (mounted) setState(() => _isConnecting = false);
+    }
   }
 
   void _updateDisplayRunTime(int? runTime) {
@@ -185,6 +202,7 @@ class _StartButtonState extends ConsumerState<StartButton>
     if (!hasProfile) {
       return Container();
     }
+    final isStart = ref.watch(isStartProvider);
     final suspend = ref.watch(suspendProvider);
     final hasThreeDigitHours =
         (_displayRunTime ?? 0) >= _threeDigitHourThreshold;
@@ -209,53 +227,66 @@ class _StartButtonState extends ConsumerState<StartButton>
           clipBehavior: Clip.antiAlias,
           materialTapTargetSize: MaterialTapTargetSize.padded,
           heroTag: null,
-          onPressed: () {
-            handleSwitchStart();
-          },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                animation: _animation,
-                builder: (_, child) {
-                  return Container(
-                    height: _buttonHeight,
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16 - 8 * _animation.value,
+          onPressed: _isConnecting ? null : handleSwitchStart,
+          child: _isConnecting
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _animation,
+                      builder: (_, child) {
+                        return Container(
+                          height: _buttonHeight,
+                          padding: EdgeInsets.only(
+                            left: 16,
+                            right: 16 - 8 * _animation.value,
+                          ),
+                          alignment: Alignment.centerLeft,
+                          child: child,
+                        );
+                      },
+                      child: AnimatedIcon(
+                        icon: AnimatedIcons.play_pause,
+                        progress: _animation,
+                      ),
                     ),
-                    alignment: Alignment.centerLeft,
-                    child: child,
-                  );
-                },
-                child: AnimatedIcon(
-                  icon: AnimatedIcons.play_pause,
-                  progress: _animation,
-                ),
-              ),
-              SizeTransition(
-                axis: Axis.horizontal,
-                alignment: Alignment.centerLeft,
-                sizeFactor: _animation,
-                child: AnimatedContainer(
-                  width: textWidth,
-                  duration: _widthAnimationDuration,
-                  curve: Curves.easeOut,
-                  child: suspend
-                      ? Text(
-                          appLocalizations.suspended,
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: context.colorScheme.onPrimaryContainer,
+                    SizeTransition(
+                      axis: Axis.horizontal,
+                      alignment: Alignment.centerLeft,
+                      sizeFactor: _animation,
+                      child: AnimatedContainer(
+                        width: textWidth,
+                        duration: _widthAnimationDuration,
+                        curve: Curves.easeOut,
+                        child: suspend
+                            ? Text(
+                                appLocalizations.suspended,
+                                maxLines: 1,
+                                overflow: TextOverflow.visible,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: context
+                                          .colorScheme
+                                          .onPrimaryContainer,
+                                    ),
+                              )
+                            : isStart
+                            ? RunTimeText(timeStamp: _displayRunTime)
+                            : Text(
+                                '连接',
+                                maxLines: 1,
+                                overflow: TextOverflow.visible,
+                                style: _runTimeTextStyle(context),
                               ),
-                        )
-                      : RunTimeText(timeStamp: _displayRunTime),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

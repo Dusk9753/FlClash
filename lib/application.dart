@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/features/auth/auth_gate.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/manager/hotkey_manager.dart';
 import 'package:fl_clash/manager/manager.dart';
@@ -13,8 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'pages/pages.dart';
 
 class Application extends ConsumerStatefulWidget {
   const Application({super.key});
@@ -182,7 +181,7 @@ class ApplicationState extends ConsumerState<Application> {
           home: child!,
         );
       },
-      child: const HomePage(),
+      child: const AuthGate(),
     );
   }
 
