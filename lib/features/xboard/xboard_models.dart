@@ -6,6 +6,7 @@ class XboardConfig {
     required this.download,
     required this.notes,
     required this.inviteCode,
+    required this.logo,
   });
 
   final List<String> domains;
@@ -14,6 +15,7 @@ class XboardConfig {
   final String download;
   final String notes;
   final String inviteCode;
+  final String logo;
 
   String get primaryBaseUrl => '${domains.first}/$apiPath';
 
@@ -31,6 +33,7 @@ class XboardConfig {
       download: json['download'] as String? ?? '',
       notes: json['notes'] as String? ?? '',
       inviteCode: json['invite_code'] as String? ?? '',
+      logo: (json['logo'] ?? json['logo_url']) as String? ?? '',
     );
   }
 }

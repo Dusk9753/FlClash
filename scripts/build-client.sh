@@ -15,14 +15,14 @@ case "$TARGET" in
   android)
     "$FLUTTER_BIN" pub get
     case "$ARCH" in
-      arm64) ABI="android-arm64" ;;
-      arm) ABI="android-arm" ;;
-      amd64) ABI="android-x64" ;;
+      arm64) ABI="android-arm64"; APK_ARCH="arm64-v8a" ;;
+      arm) ABI="android-arm"; APK_ARCH="armeabi-v7a" ;;
+      amd64) ABI="android-x64"; APK_ARCH="x86_64" ;;
       *) printf 'Unsupported Android ABI: %s\n' "$ARCH" >&2; exit 2 ;;
     esac
     "$FLUTTER_BIN" build apk --release --split-per-abi --target-platform "$ABI" \
       --dart-define=APP_ENV="$ENVIRONMENT"
-    cp build/app/outputs/flutter-apk/app-"$ARCH"-v8a-release.apk \
+    cp build/app/outputs/flutter-apk/app-"$APK_ARCH"-release.apk \
       dist/xiaohuojian-android-"$ARCH".apk
     ;;
   windows)

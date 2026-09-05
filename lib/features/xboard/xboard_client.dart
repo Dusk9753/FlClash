@@ -19,14 +19,18 @@ class XboardClient {
   final List<String> _baseUrls;
   final Dio _dio;
 
-  String? _extractMessage(Object error) {
+  String _extractMessage(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
       if (data is Map && data['message'] != null) {
         return data['message'].toString();
       }
+      if (data is Map && data['error'] is Map &&
+          (data['error'] as Map)['message'] != null) {
+        return (data['error'] as Map)['message'].toString();
+      }
       if (error.message != null && error.message!.isNotEmpty) {
-        return error.message;
+        return error.message!;
       }
     }
     return error.toString();
@@ -73,7 +77,7 @@ class XboardClient {
       }
     }
     throw XboardApiException(
-      _extractMessage(lastError ?? Exception()) ?? '请求失败',
+      _extractMessage(lastError ?? Exception()),
     );
   }
 

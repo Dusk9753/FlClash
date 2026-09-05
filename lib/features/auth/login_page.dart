@@ -65,6 +65,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final config = ref.watch(xboardConfigProvider).value;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -76,11 +77,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.rocket_launch,
-                    size: 64,
-                    color: colorScheme.primary,
-                  ),
+                  _BrandIcon(logoUrl: config?.logo, color: colorScheme.primary),
                   const SizedBox(height: 16),
                   Text(
                     '小火箭加速',
@@ -138,6 +135,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BrandIcon extends StatelessWidget {
+  const _BrandIcon({required this.logoUrl, required this.color});
+
+  final String? logoUrl;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = logoUrl?.trim() ?? '';
+    if (url.isEmpty) {
+      return Icon(Icons.rocket_launch, size: 64, color: color);
+    }
+    return Image.network(
+      url,
+      width: 64,
+      height: 64,
+      errorBuilder: (_, _, _) => Icon(Icons.rocket_launch, size: 64, color: color),
     );
   }
 }

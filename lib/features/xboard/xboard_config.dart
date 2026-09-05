@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 import 'xboard_models.dart';
 
-const String kXboardConfigUrl = 'http://new.1q2b.com/oss/huosuconfig.json';
+const String kXboardConfigUrl = 'https://new.1q2b.com/oss/huosuconfig.json';
 
 String _decodeConfigRaw(String raw) {
   final normalized = raw.trim().replaceAll(RegExp(r'\s'), '');
