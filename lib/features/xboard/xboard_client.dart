@@ -141,8 +141,13 @@ class XboardClient {
   }
 
   Future<List<XboardAnnouncement>> getAnnouncements(XboardAuthData auth) async {
-    final page = await getAnnouncementPage(auth);
-    return page.items;
+    final firstPage = await getAnnouncementPage(auth);
+    final pages = <XboardAnnouncement>[...firstPage.items];
+    final pageCount = (firstPage.total + 4) ~/ 5;
+    for (var current = 2; current <= pageCount; current++) {
+      pages.addAll((await getAnnouncementPage(auth, current: current)).items);
+    }
+    return pages;
   }
 
   Future<List<XboardPlan>> getPlans(XboardAuthData auth) async {

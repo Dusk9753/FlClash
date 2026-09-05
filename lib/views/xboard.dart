@@ -52,29 +52,85 @@ class XboardAnnouncementsView extends ConsumerWidget {
       ],
       body: data.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(error.toString())),
+        error: (_, _) => _XboardErrorState(
+          message: '公告加载失败',
+          onRetry: () => ref.invalidate(_announcementsProvider),
+        ),
         data: (items) => items.isEmpty
-            ? const Center(child: Text('暂无公告'))
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
+            ? const _XboardEmptyState(
+                icon: Icons.campaign_outlined,
+                message: '暂无公告',
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ExpansionTile(
-                      title: Text(item.title),
-                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(item.content),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (context, index) =>
+                    _AnnouncementTile(item: items[index], featured: index == 0),
               ),
+      ),
+    );
+  }
+}
+
+class _AnnouncementTile extends StatelessWidget {
+  const _AnnouncementTile({required this.item, required this.featured});
+
+  final XboardAnnouncement item;
+  final bool featured;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final date = item.createdAt;
+    final metadata = date == null
+        ? '服务公告'
+        : '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ExpansionTile(
+        initiallyExpanded: featured,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+        leading: Icon(
+          featured
+              ? Icons.notifications_active_outlined
+              : Icons.campaign_outlined,
+          color: featured ? theme.colorScheme.primary : null,
+        ),
+        title: Text(
+          item.title.isEmpty ? '未命名公告' : item.title,
+          style: featured
+              ? theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                )
+              : null,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(metadata),
+        ),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SelectableText(
+              item.content.isEmpty ? '暂无详细内容' : item.content,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.55),
+            ),
+          ),
+          if (item.tags.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 6,
+                children: item.tags
+                    .map((tag) => Chip(label: Text(tag)))
+                    .toList(),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -104,8 +160,8 @@ class XboardStoreView extends ConsumerWidget {
         isScrollControlled: true,
         builder: (_) => _PaymentSheet(tradeNo: tradeNo),
       );
-    } catch (error) {
-      if (context.mounted) _showMessage(context, error.toString());
+    } catch (_) {
+      if (context.mounted) _showMessage(context, '订单创建失败，请稍后重试');
     }
   }
 
@@ -113,7 +169,7 @@ class XboardStoreView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(_plansProvider);
     return CommonScaffold(
-      title: '商店',
+      title: '套餐',
       actions: [
         IconButton(
           tooltip: '刷新套餐',
@@ -123,55 +179,138 @@ class XboardStoreView extends ConsumerWidget {
       ],
       body: data.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(error.toString())),
+        error: (_, _) => _XboardErrorState(
+          message: '套餐加载失败',
+          onRetry: () => ref.invalidate(_plansProvider),
+        ),
         data: (plans) => plans.isEmpty
-            ? const Center(child: Text('暂无可购买套餐'))
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
+            ? const _XboardEmptyState(
+                icon: Icons.storefront_outlined,
+                message: '暂无可购买套餐',
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 itemCount: plans.length,
-                itemBuilder: (context, index) {
-                  final plan = plans[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            plan.name,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          if (plan.content.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(plan.content),
-                          ],
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final entry in plan.prices.entries)
-                                FilledButton.tonal(
-                                  onPressed: plan.sell
-                                      ? () =>
-                                            _buy(context, ref, plan, entry.key)
-                                      : null,
-                                  child: Text(
-                                    '${_periodLabels[entry.key] ?? entry.key} ${(entry.value / 100).toStringAsFixed(2)} 元',
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) => _PlanCard(
+                  plan: plans[index],
+                  onBuy: (key) => _buy(context, ref, plans[index], key),
+                ),
               ),
       ),
     );
   }
+}
+
+class _PlanCard extends StatelessWidget {
+  const _PlanCard({required this.plan, required this.onBuy});
+
+  final XboardPlan plan;
+  final ValueChanged<String> onBuy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final prices = plan.prices.entries.toList();
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    plan.name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (!plan.sell) const Chip(label: Text('暂停售卖')),
+              ],
+            ),
+            if (plan.content.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                plan.content,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+            const SizedBox(height: 14),
+            if (prices.isEmpty)
+              const Text('该套餐暂未配置价格')
+            else
+              ...prices.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonalIcon(
+                      onPressed: plan.sell ? () => onBuy(entry.key) : null,
+                      icon: const Icon(Icons.shopping_cart_outlined),
+                      label: Text(
+                        '${_periodLabels[entry.key] ?? entry.key}  ${(entry.value / 100).toStringAsFixed(2)} 元',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _XboardEmptyState extends StatelessWidget {
+  const _XboardEmptyState({required this.icon, required this.message});
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 42, color: Theme.of(context).colorScheme.outline),
+        const SizedBox(height: 12),
+        Text(message),
+      ],
+    ),
+  );
+}
+
+class _XboardErrorState extends StatelessWidget {
+  const _XboardErrorState({required this.message, required this.onRetry});
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.cloud_off_outlined,
+          size: 42,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        const SizedBox(height: 12),
+        Text(message),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh),
+          label: const Text('重新加载'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _PaymentSheet extends ConsumerStatefulWidget {

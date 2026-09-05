@@ -18,12 +18,20 @@ void main() {
   test('parses paged notices from the XBoard notice endpoint', () {
     final page = XboardAnnouncementPage.fromJson({
       'data': [
-        {'id': 4, 'title': '维护通知', 'content': '今晚维护'},
+        {
+          'id': 4,
+          'title': '维护通知',
+          'content': '今晚维护',
+          'created_at': 1720000000,
+          'tags': ['维护'],
+        },
       ],
       'total': 6,
     });
 
     expect(page.total, 6);
     expect(page.items.single.title, '维护通知');
+    expect(page.items.single.createdAt, isNotNull);
+    expect(page.items.single.tags, ['维护']);
   });
 }

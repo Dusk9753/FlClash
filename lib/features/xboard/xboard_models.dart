@@ -104,17 +104,33 @@ class XboardAnnouncement {
     required this.id,
     required this.title,
     required this.content,
+    this.createdAt,
+    this.tags = const [],
   });
   final int id;
   final String title;
   final String content;
+  final DateTime? createdAt;
+  final List<String> tags;
 
   factory XboardAnnouncement.fromJson(Map<String, dynamic> json) =>
       XboardAnnouncement(
         id: (json['id'] as num?)?.toInt() ?? 0,
         title: json['title']?.toString() ?? '',
         content: json['content']?.toString() ?? json['body']?.toString() ?? '',
+        createdAt: _parseDate(json['created_at']),
+        tags: (json['tags'] is List)
+            ? (json['tags'] as List).map((tag) => tag.toString()).toList()
+            : const [],
       );
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value is num) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt() * 1000);
+    }
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
 }
 
 class XboardAnnouncementPage {
