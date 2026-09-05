@@ -66,8 +66,8 @@ android {
         }
 
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
@@ -75,10 +75,6 @@ android {
                 applicationIdSuffix = ".dev"
             }
 
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
         }
     }
 }
