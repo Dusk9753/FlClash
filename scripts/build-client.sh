@@ -22,7 +22,7 @@ case "$TARGET" in
     esac
     "$FLUTTER_BIN" build apk --release --split-per-abi --target-platform "$ABI" \
       --dart-define=APP_ENV="$ENVIRONMENT"
-    cp build/app/outputs/flutter-apk/app-"$ABI"-release.apk \
+    cp build/app/outputs/flutter-apk/app-"$ARCH"-v8a-release.apk \
       dist/xiaohuojian-android-"$ARCH".apk
     ;;
   windows)
