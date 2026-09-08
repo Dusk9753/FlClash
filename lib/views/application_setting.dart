@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/widgets/widgets.dart';
@@ -202,6 +204,36 @@ class OpenLogsItem extends ConsumerWidget {
   }
 }
 
+class ExportDiagnosticsItem extends StatelessWidget {
+  const ExportDiagnosticsItem({super.key});
+
+  Future<void> _export(BuildContext context) async {
+    try {
+      final path = await picker.saveFile(
+        'xiaohuojian-diagnostics-${DateTime.now().toUtc().millisecondsSinceEpoch}.log',
+        utf8.encode(await diagnostics.exportText()),
+      );
+      if (context.mounted && path != null) {
+        context.showNotifier('诊断日志已导出');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        context.showSnackBar('诊断日志导出失败');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem(
+      title: const Text('导出诊断日志'),
+      subtitle: const Text('用于定位启动或运行异常，已自动隐藏敏感信息'),
+      trailing: const Icon(Icons.download_outlined),
+      onTap: () => _export(context),
+    );
+  }
+}
+
 class CrashlyticsItem extends ConsumerWidget {
   const CrashlyticsItem({super.key});
 
@@ -261,6 +293,7 @@ class ApplicationSettingView extends StatelessWidget {
       if (system.isAndroid) ...[const HiddenItem()],
       const AnimateTabItem(),
       const OpenLogsItem(),
+      const ExportDiagnosticsItem(),
       const CloseConnectionsItem(),
       const UsageItem(),
       if (system.isAndroid) const CrashlyticsItem(),
