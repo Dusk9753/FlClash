@@ -29,6 +29,11 @@ class Navigation {
         builder: (_) => const XboardStoreView(),
       ),
       NavigationItem(
+        icon: const Icon(Icons.support_agent_outlined),
+        label: PageLabel.support,
+        builder: (_) => const XboardSupportView(),
+      ),
+      NavigationItem(
         icon: const Icon(Icons.article),
         label: PageLabel.proxies,
         builder: (_) =>

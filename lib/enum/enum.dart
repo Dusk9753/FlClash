@@ -327,6 +327,7 @@ enum PageLabel {
   connections,
   announcements,
   store,
+  support,
 }
 
 enum RuleAction {

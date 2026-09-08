@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_clash/features/auth/auth_providers.dart';
+import 'package:fl_clash/features/xboard/xboard_client.dart';
 import 'package:fl_clash/features/xboard/xboard_models.dart';
 import 'package:fl_clash/widgets/scaffold.dart';
 import 'package:flutter/material.dart';
@@ -476,6 +477,82 @@ class _PaymentSheetState extends ConsumerState<_PaymentSheet> {
               label: const Text('取消订单'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class XboardSupportView extends StatefulWidget {
+  const XboardSupportView({super.key});
+
+  @override
+  State<XboardSupportView> createState() => _XboardSupportViewState();
+}
+
+class _XboardSupportViewState extends State<XboardSupportView> {
+  static final _supportUrl = Uri.parse('https://chat.1q2b.com/support');
+
+  bool _opening = false;
+  String? _error;
+
+  Future<void> _openSupport() async {
+    setState(() {
+      _opening = true;
+      _error = null;
+    });
+    try {
+      final opened = await launchUrl(
+        _supportUrl,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened) throw const XboardApiException('无法打开在线客服');
+    } catch (error) {
+      if (mounted) setState(() => _error = _supportMessage(error));
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  String _supportMessage(Object error) {
+    return '客服暂时不可用，请稍后重试';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CommonScaffold(
+      title: '客服',
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.support_agent_outlined,
+                size: 48,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              Text('在线客服', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(_error ?? '获取使用帮助或订单支持', textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _opening ? null : _openSupport,
+                icon: _opening
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chat_outlined),
+                label: Text(_opening ? '正在打开' : '联系在线客服'),
+              ),
+              if (_error != null)
+                TextButton(onPressed: _openSupport, child: const Text('重试')),
+            ],
+          ),
         ),
       ),
     );
