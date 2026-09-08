@@ -141,6 +141,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "allowLanDesc": MessageLookupByLibrary.simpleMessage(
       "Allow access proxy through the LAN",
     ),
+    "announcements": MessageLookupByLibrary.simpleMessage("Announcements"),
     "app": MessageLookupByLibrary.simpleMessage("App"),
     "appAccessControl": MessageLookupByLibrary.simpleMessage(
       "App access control",
@@ -972,6 +973,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "stop": MessageLookupByLibrary.simpleMessage("Stop"),
     "stopVpn": MessageLookupByLibrary.simpleMessage("Stopping VPN..."),
+    "store": MessageLookupByLibrary.simpleMessage("Store"),
     "style": MessageLookupByLibrary.simpleMessage("Style"),
     "subRule": MessageLookupByLibrary.simpleMessage("Sub rule"),
     "subRuleEmpty": MessageLookupByLibrary.simpleMessage("Sub rule is empty"),
@@ -979,6 +981,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Sub rule cannot be empty",
     ),
     "submit": MessageLookupByLibrary.simpleMessage("Submit"),
+    "support": MessageLookupByLibrary.simpleMessage("Support"),
     "suspended": MessageLookupByLibrary.simpleMessage("Suspended..."),
     "sync": MessageLookupByLibrary.simpleMessage("Sync"),
     "system": MessageLookupByLibrary.simpleMessage("System"),

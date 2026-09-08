@@ -4,7 +4,6 @@ import 'package:fl_clash/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _threeDigitHourThreshold = 100 * 60 * 60 * 1000;
 const _widthAnimationDuration = Duration(milliseconds: 200);
 const _buttonHeight = 56.0;
 
@@ -19,22 +18,6 @@ TextStyle? _hundredsTextStyle(BuildContext context) {
     color: context.colorScheme.primary,
     fontWeight: FontWeight.w600,
   );
-}
-
-double _computeRunTimeTextWidth(
-  BuildContext context, {
-  required bool hasThreeDigitHours,
-}) {
-  final regularWidth = globalState.measure
-      .computeTextSize(Text('99:99:99', style: _runTimeTextStyle(context)))
-      .width;
-  if (!hasThreeDigitHours) {
-    return regularWidth + 16;
-  }
-  final hundredsWidth = globalState.measure
-      .computeTextSize(Text('9', style: _hundredsTextStyle(context)))
-      .width;
-  return hundredsWidth + regularWidth + 16;
 }
 
 class RunTimeText extends StatelessWidget {
@@ -73,16 +56,12 @@ class _StartButtonState extends ConsumerState<StartButton>
     with SingleTickerProviderStateMixin {
   AnimationController? _controller;
   late Animation<double> _animation;
-  double? _twoDigitTextWidth;
-  double? _threeDigitTextWidth;
   double? _suspendedTextWidth;
-  int? _displayRunTime;
 
   @override
   void initState() {
     super.initState();
     final isStart = ref.read(isStartProvider);
-    _displayRunTime = ref.read(runTimeProvider);
     _controller = AnimationController(
       vsync: this,
       value: isStart ? 1 : 0,
@@ -92,9 +71,6 @@ class _StartButtonState extends ConsumerState<StartButton>
       parent: _controller!,
       curve: Curves.easeOutBack,
     );
-    ref.listenManual(runTimeProvider, (_, next) {
-      _updateDisplayRunTime(next);
-    });
     ref.listenManual(isStartProvider, (prev, next) {
       updateController(next);
     }, fireImmediately: true);
@@ -103,8 +79,6 @@ class _StartButtonState extends ConsumerState<StartButton>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _twoDigitTextWidth = null;
-    _threeDigitTextWidth = null;
     _suspendedTextWidth = null;
   }
 
@@ -136,17 +110,6 @@ class _StartButtonState extends ConsumerState<StartButton>
     }
   }
 
-  void _updateDisplayRunTime(int? runTime) {
-    if (!mounted ||
-        _displayRunTime == runTime ||
-        (runTime == null && !(_controller?.isDismissed ?? true))) {
-      return;
-    }
-    setState(() {
-      _displayRunTime = runTime;
-    });
-  }
-
   void updateController(bool isStart) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -160,28 +123,8 @@ class _StartButtonState extends ConsumerState<StartButton>
         controller.forward();
         return;
       }
-      controller.reverse().whenCompleteOrCancel(() {
-        if (mounted && controller.isDismissed) {
-          _updateDisplayRunTime(ref.read(runTimeProvider));
-        }
-      });
+      controller.reverse();
     });
-  }
-
-  double _getRunTimeTextWidth(
-    BuildContext context, {
-    required bool hasThreeDigitHours,
-  }) {
-    if (hasThreeDigitHours) {
-      return _threeDigitTextWidth ??= _computeRunTimeTextWidth(
-        context,
-        hasThreeDigitHours: true,
-      );
-    }
-    return _twoDigitTextWidth ??= _computeRunTimeTextWidth(
-      context,
-      hasThreeDigitHours: false,
-    );
   }
 
   double _getSuspendedTextWidth(BuildContext context, String suspendedText) {
@@ -204,13 +147,11 @@ class _StartButtonState extends ConsumerState<StartButton>
     }
     final isStart = ref.watch(isStartProvider);
     final suspend = ref.watch(suspendProvider);
-    final hasThreeDigitHours =
-        (_displayRunTime ?? 0) >= _threeDigitHourThreshold;
     final theme = Theme.of(context);
     final appLocalizations = context.appLocalizations;
     final textWidth = suspend
         ? _getSuspendedTextWidth(context, appLocalizations.suspended)
-        : _getRunTimeTextWidth(context, hasThreeDigitHours: hasThreeDigitHours);
+        : _getSuspendedTextWidth(context, '连接');
     return RepaintBoundary(
       child: Theme(
         data: theme.copyWith(
@@ -275,10 +216,8 @@ class _StartButtonState extends ConsumerState<StartButton>
                                           .onPrimaryContainer,
                                     ),
                               )
-                            : isStart
-                            ? RunTimeText(timeStamp: _displayRunTime)
                             : Text(
-                                '连接',
+                                isStart ? '停止' : '连接',
                                 maxLines: 1,
                                 overflow: TextOverflow.visible,
                                 style: _runTimeTextStyle(context),

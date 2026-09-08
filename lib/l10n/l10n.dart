@@ -74,6 +74,26 @@ class AppLocalizations {
     return Intl.message('Dashboard', name: 'dashboard', desc: '', args: []);
   }
 
+  /// `Announcements`
+  String get announcements {
+    return Intl.message(
+      'Announcements',
+      name: 'announcements',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Store`
+  String get store {
+    return Intl.message('Store', name: 'store', desc: '', args: []);
+  }
+
+  /// `Support`
+  String get support {
+    return Intl.message('Support', name: 'support', desc: '', args: []);
+  }
+
   /// `Proxies`
   String get proxies {
     return Intl.message('Proxies', name: 'proxies', desc: '', args: []);

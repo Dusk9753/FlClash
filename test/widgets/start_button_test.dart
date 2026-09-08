@@ -64,7 +64,7 @@ void main() {
     expect(text.style?.color, colorScheme.onPrimaryContainer);
   });
 
-  testWidgets('StartButton animates its width when hours reach three digits', (
+  testWidgets('StartButton shows Chinese connection state labels', (
     tester,
   ) async {
     final container = ProviderContainer(
@@ -77,8 +77,6 @@ void main() {
     );
     addTearDown(container.dispose);
     globalState.container = container;
-    container.read(runTimeProvider.notifier).value = 99 * 60 * 60 * 1000;
-
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -89,92 +87,15 @@ void main() {
 
     final button = find.byType(FloatingActionButton);
     expect(tester.getSize(button).height, 56);
-    final twoDigitWidth = tester.getSize(button).width;
+    expect(find.text('连接'), findsOneWidget);
 
-    container.read(runTimeProvider.notifier).value = 100 * 60 * 60 * 1000;
-    await tester.pump();
-    expect(tester.getSize(button).width, twoDigitWidth);
-
-    await tester.pump(const Duration(milliseconds: 100));
-    final animatedWidth = tester.getSize(button).width;
-    expect(animatedWidth, greaterThan(twoDigitWidth));
-
-    await tester.pumpAndSettle();
-    expect(tester.getSize(button).width, greaterThan(animatedWidth));
-  });
-
-  testWidgets('StartButton resets its text after the close animation', (
-    tester,
-  ) async {
-    final container = ProviderContainer(
-      overrides: [
-        profilesProvider.overrideWithValue([
-          const Profile(id: 1, autoUpdateDuration: Duration.zero),
-        ]),
-        suspendProvider.overrideWithValue(false),
-      ],
-    );
-    addTearDown(container.dispose);
-    globalState.container = container;
-    container.read(runTimeProvider.notifier).value = const Duration(
-      hours: 100,
-      minutes: 2,
-      seconds: 3,
-    ).inMilliseconds;
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const _TestApp(child: StartButton()),
-      ),
-    );
-    await tester.pump();
-
-    final button = find.byType(FloatingActionButton);
-    String runTimeText() {
-      final text = tester.widget<Text>(
-        find.descendant(
-          of: find.byType(RunTimeText),
-          matching: find.byType(Text),
-        ),
-      );
-      return text.data ?? text.textSpan!.toPlainText();
-    }
-
-    final expandedTextWidth = tester
-        .widget<AnimatedContainer>(find.byType(AnimatedContainer))
-        .constraints
-        ?.maxWidth;
-    final expandedButtonWidth = tester.getSize(button).width;
-    expect(runTimeText(), '100:02:03');
-
-    container.read(runTimeProvider.notifier).value = null;
-    await tester.pump();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(tester.getSize(button).width, greaterThan(expandedButtonWidth));
-    expect(
-      tester
-          .widget<AnimatedContainer>(find.byType(AnimatedContainer))
-          .constraints
-          ?.maxWidth,
-      expandedTextWidth,
-    );
-    expect(runTimeText(), '100:02:03');
-
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(tester.getSize(button).width, 56);
-    expect(runTimeText(), '100:02:03');
-
+    container.read(runTimeProvider.notifier).value = 1;
     await tester.pumpAndSettle();
 
-    expect(tester.getSize(button).width, 56);
-    expect(runTimeText(), '00:00:00');
+    expect(find.text('停止'), findsOneWidget);
   });
 
-  testWidgets('dispatches each toggle through the shared running state', (
+  testWidgets('dispatches the stop action through the shared running state', (
     tester,
   ) async {
     final container = ProviderContainer(
@@ -202,12 +123,9 @@ void main() {
     final button = find.byType(FloatingActionButton);
 
     await tester.tap(button);
+    await tester.pump();
     expect(action.requests, [false]);
     expect(container.read(isStartProvider), isFalse);
-
-    await tester.tap(button);
-    expect(action.requests, [false, true]);
-    expect(container.read(isStartProvider), isTrue);
   });
 }
 

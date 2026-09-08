@@ -54,13 +54,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  void _showMessage(String message) {
+  Future<void> _showMessage(String message) async {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('提示'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openDiagnostics() async {
