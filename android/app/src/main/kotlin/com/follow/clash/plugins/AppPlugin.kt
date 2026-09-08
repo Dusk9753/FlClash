@@ -7,12 +7,14 @@ import android.app.ActivityManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.VpnService
+import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.FileProvider
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -37,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import java.io.File
 
 class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
 
@@ -120,6 +123,11 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 result.success(openAppSettings())
             }
 
+            "installApk" -> {
+                val path = call.argument<String>("path")
+                result.success(path != null && installApk(path))
+            }
+
             "didCrashOnPreviousExecution" -> {
                 result.success(GlobalState.didCrashOnPreviousExecution())
             }
@@ -188,6 +196,38 @@ class AppPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware 
                 data = "package:${GlobalState.application.packageName}".toUri()
             }
             activity.startActivity(intent)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun installApk(path: String): Boolean {
+        val activity = activity ?: return false
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                !activity.packageManager.canRequestPackageInstalls()
+            ) {
+                activity.startActivity(
+                    Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                        data = Uri.parse("package:${GlobalState.application.packageName}")
+                    },
+                )
+                return false
+            }
+            val apk = File(path)
+            if (!apk.isFile || apk.length() == 0L) return false
+            val uri = FileProvider.getUriForFile(
+                activity,
+                "${GlobalState.application.packageName}.update",
+                apk,
+            )
+            activity.startActivity(
+                Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                },
+            )
             true
         } catch (_: Exception) {
             false

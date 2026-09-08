@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:fl_clash/common/common.dart';
-import 'package:fl_clash/providers/config.dart';
+import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -278,6 +278,22 @@ class AutoCheckUpdateItem extends ConsumerWidget {
   }
 }
 
+class CheckUpdateItem extends ConsumerWidget {
+  const CheckUpdateItem({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!system.isAndroid) return const SizedBox.shrink();
+    return ListItem(
+      title: const Text('检查更新'),
+      trailing: const Icon(Icons.system_update_outlined),
+      onTap: () => ref
+          .read(commonActionProvider.notifier)
+          .checkXboardUpdate(isUser: true),
+    );
+  }
+}
+
 class ApplicationSettingView extends StatelessWidget {
   const ApplicationSettingView({super.key});
 
@@ -297,6 +313,7 @@ class ApplicationSettingView extends StatelessWidget {
       const CloseConnectionsItem(),
       const UsageItem(),
       const AutoCheckUpdateItem(),
+      const CheckUpdateItem(),
     ];
     return BaseScaffold(
       title: context.appLocalizations.application,
