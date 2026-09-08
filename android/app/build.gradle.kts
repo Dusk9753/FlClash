@@ -89,6 +89,22 @@ flutter {
     source = "../.."
 }
 
+tasks.configureEach {
+    if (name == "mergeReleaseNativeLibs") {
+        dependsOn("copyJniLibsflutterBuildRelease")
+        doLast {
+            copy {
+                from(layout.buildDirectory.dir("intermediates/flutter/release/jniLibs"))
+                into(
+                    layout.buildDirectory.dir(
+                        "intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib",
+                    ),
+                )
+            }
+        }
+    }
+}
+
 dependencies {
     implementation(project(":service"))
     implementation(project(":common"))
