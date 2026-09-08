@@ -80,8 +80,6 @@ class GlobalState {
       .read(patchClashConfigProvider.select((state) => state.globalUa))
       .takeFirstValid([packageInfo.ua]);
 
-  BuildContext get _context => navigatorKey.currentContext!;
-
   Future<ProviderContainer> _initData(int version) async {
     packageInfo = await PackageInfo.fromPlatform();
     var config = await migration.run();
@@ -107,10 +105,7 @@ class GlobalState {
     );
     final profiles = await database.profilesDao.query().get();
     container.read(profilesProvider.notifier).setAndReorder(profiles);
-    await AppLocalizations.load(
-      utils.getLocaleForString(config.appSettingProps.locale) ??
-          WidgetsBinding.instance.platformDispatcher.locale,
-    );
+    await AppLocalizations.load(const Locale('zh', 'CN'));
     await window?.init(version, config.windowProps);
     if (system.isAndroid) {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -322,9 +317,7 @@ class GlobalState {
       window?.hide();
     }
     await _handleFailedPreference();
-    await _handlerDisclaimer();
     await _showCrashRecoveryTip();
-    await _showCrashlyticsTip();
     await container.read(coreActionProvider.notifier).startCore();
     if (!_didCrashOnPreviousExecution) {
       await container.read(setupActionProvider.notifier).initStatus();
@@ -354,63 +347,6 @@ class GlobalState {
       await file.safeDelete();
     }
     await container.read(systemActionProvider.notifier).handleExit();
-  }
-
-  Future<bool> showDisclaimer() async {
-    return await showCommonDialog<bool>(
-          dismissible: false,
-          child: CommonDialog(
-            title: currentAppLocalizations.disclaimer,
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(_context).pop<bool>(false);
-                },
-                child: Text(currentAppLocalizations.exit),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(_context).pop<bool>(true);
-                },
-                child: Text(currentAppLocalizations.agree),
-              ),
-            ],
-            child: Text(currentAppLocalizations.disclaimerDesc),
-          ),
-        ) ??
-        false;
-  }
-
-  Future<void> _showCrashlyticsTip() async {
-    if (!system.isAndroid) return;
-    if (container.read(
-      appSettingProvider.select((state) => state.crashlyticsTip),
-    )) {
-      return;
-    }
-    await showMessage(
-      title: currentAppLocalizations.dataCollectionTip,
-      cancelable: false,
-      message: TextSpan(text: currentAppLocalizations.dataCollectionContent),
-    );
-    container
-        .read(appSettingProvider.notifier)
-        .update((state) => state.copyWith(crashlyticsTip: true));
-  }
-
-  Future<void> _handlerDisclaimer() async {
-    if (container.read(
-      appSettingProvider.select((state) => state.disclaimerAccepted),
-    )) {
-      return;
-    }
-    final isDisclaimerAccepted = await showDisclaimer();
-    if (!isDisclaimerAccepted) {
-      await container.read(systemActionProvider.notifier).handleExit();
-    }
-    container
-        .read(appSettingProvider.notifier)
-        .update((state) => state.copyWith(disclaimerAccepted: true));
   }
 }
 

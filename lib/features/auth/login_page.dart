@@ -111,6 +111,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final config = ref.watch(xboardConfigProvider).value;
+    final platformHealth = ref.watch(xboardPlatformHealthProvider);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -130,6 +131,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  _PlatformStatus(
+                    platformHealth: platformHealth,
+                    onRefresh: () {
+                      ref.invalidate(xboardConfigProvider);
+                      ref.invalidate(xboardPlatformHealthProvider);
+                    },
                   ),
                   const SizedBox(height: 40),
                   TextField(
@@ -181,6 +190,53 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlatformStatus extends StatelessWidget {
+  const _PlatformStatus({
+    required this.platformHealth,
+    required this.onRefresh,
+  });
+
+  final AsyncValue<bool> platformHealth;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final (Color color, String label, IconData icon) = switch (platformHealth) {
+      AsyncData() => (Colors.green, '已连接', Icons.circle),
+      AsyncError() => (colorScheme.error, '平台维护中', Icons.error_outline),
+      _ => (colorScheme.outline, '正在连接平台', Icons.sync),
+    };
+    return Center(
+      child: Semantics(
+        label: label,
+        button: true,
+        child: InkWell(
+          onTap: onRefresh,
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: color.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 14),
+                const SizedBox(width: 6),
+                Text(label, style: TextStyle(color: color)),
+              ],
             ),
           ),
         ),

@@ -20,6 +20,35 @@ void main() {
     expect(exception.message, '登录已失效，请重新登录');
   });
 
+  test('maps failed login credentials to a Chinese error', () {
+    final error = DioException(
+      requestOptions: RequestOptions(path: '/passport/auth/login'),
+      response: Response<dynamic>(
+        requestOptions: RequestOptions(path: '/passport/auth/login'),
+        statusCode: 401,
+      ),
+      type: DioExceptionType.badResponse,
+    );
+
+    final exception = XboardApiException.fromError(error);
+
+    expect(exception.isSessionExpired, isFalse);
+    expect(exception.message, '账号或密码错误');
+  });
+
+  test('maps a bad login request to a Chinese error', () {
+    final error = DioException(
+      requestOptions: RequestOptions(path: '/passport/auth/login'),
+      response: Response<dynamic>(
+        requestOptions: RequestOptions(path: '/passport/auth/login'),
+        statusCode: 400,
+      ),
+      type: DioExceptionType.badResponse,
+    );
+
+    expect(XboardApiException.fromError(error).message, '账号或密码错误');
+  });
+
   test('does not expose remote failure bodies to the user', () {
     final error = DioException(
       requestOptions: RequestOptions(path: '/user/order/save'),

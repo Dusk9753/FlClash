@@ -10,7 +10,15 @@ class XboardApiException implements Exception {
   final bool isSessionExpired;
 
   factory XboardApiException.fromError(Object error) {
-    if (error is DioException && error.response?.statusCode == 401) {
+    final statusCode = error is DioException
+        ? error.response?.statusCode
+        : null;
+    final path = error is DioException ? error.requestOptions.path : '';
+    final isLoginRequest = path.contains('/passport/auth/login');
+    if (isLoginRequest && const {400, 401, 403}.contains(statusCode)) {
+      return const XboardApiException('账号或密码错误');
+    }
+    if (statusCode == 401) {
       return const XboardApiException('登录已失效，请重新登录', isSessionExpired: true);
     }
     if (error is DioException && error.response != null) {
@@ -70,10 +78,20 @@ class XboardClient {
         return body;
       } catch (e) {
         await _recordRequestFailure(path, e);
+        if (_isInvalidLoginError(path, e)) {
+          throw XboardApiException.fromError(e);
+        }
         lastError = e;
       }
     }
     throw XboardApiException.fromError(lastError ?? Exception());
+  }
+
+  bool _isInvalidLoginError(String path, Object error) {
+    if (!path.contains('/passport/auth/login') || error is! DioException) {
+      return false;
+    }
+    return const {400, 401, 403}.contains(error.response?.statusCode);
   }
 
   Future<void> _recordRequestFailure(String path, Object error) async {
@@ -99,6 +117,10 @@ class XboardClient {
       throw const XboardApiException('登录响应格式错误');
     }
     return XboardAuthData.fromJson(Map<String, dynamic>.from(data));
+  }
+
+  Future<void> checkPlatformHealth() async {
+    await _request('/guest/comm/config');
   }
 
   Future<XboardAuthData> register(

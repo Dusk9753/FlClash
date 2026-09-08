@@ -28,7 +28,13 @@ Future<XboardConfig> fetchXboardConfig({Dio? dio}) async {
       throw Exception('XBoard config is empty');
     }
     final decoded = _decodeConfigRaw(data);
-    return XboardConfig.fromJson(jsonDecode(decoded) as Map<String, dynamic>);
+    final config = XboardConfig.fromJson(
+      jsonDecode(decoded) as Map<String, dynamic>,
+    );
+    if (config.domains.isEmpty) {
+      throw const FormatException('XBoard config has no domains');
+    }
+    return config;
   } catch (error) {
     final details = switch (error) {
       DioException(:final type, :final response) =>

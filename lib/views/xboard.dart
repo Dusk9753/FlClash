@@ -215,54 +215,47 @@ class _PlanCard extends StatelessWidget {
     final prices = plan.prices.entries.toList();
     return Card(
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    plan.name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                if (!plan.sell) const Chip(label: Text('暂停售卖')),
-              ],
-            ),
-            if (plan.content.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                plan.content,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium,
-              ),
-            ],
-            const SizedBox(height: 14),
-            if (prices.isEmpty)
-              const Text('该套餐暂未配置价格')
-            else
-              ...prices.map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.tonalIcon(
-                      onPressed: plan.sell ? () => onBuy(entry.key) : null,
-                      icon: const Icon(Icons.shopping_cart_outlined),
-                      label: Text(
-                        '${_periodLabels[entry.key] ?? entry.key}  ${(entry.value / 100).toStringAsFixed(2)} 元',
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        leading: const Icon(Icons.inventory_2_outlined),
+        title: Text(
+          plan.name,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
+        subtitle: Text(plan.sell ? '点击查看套餐详情' : '暂停售卖'),
+        children: [
+          if (plan.content.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(plan.content, style: theme.textTheme.bodyMedium),
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (prices.isEmpty)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('该套餐暂未配置价格'),
+            )
+          else
+            ...prices.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: plan.sell ? () => onBuy(entry.key) : null,
+                    icon: const Icon(Icons.shopping_cart_outlined),
+                    label: Text(
+                      '${_periodLabels[entry.key] ?? entry.key}  ${(entry.value / 100).toStringAsFixed(2)} 元',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

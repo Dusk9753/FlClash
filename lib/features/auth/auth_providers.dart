@@ -16,6 +16,12 @@ final xboardClientProvider = FutureProvider<XboardClient>((ref) async {
   return XboardClient(baseUrls: config.baseUrls);
 });
 
+final xboardPlatformHealthProvider = FutureProvider<bool>((ref) async {
+  final client = await ref.watch(xboardClientProvider.future);
+  await client.checkPlatformHealth().timeout(const Duration(seconds: 10));
+  return true;
+});
+
 class AuthNotifier extends AsyncNotifier<XboardAuthData?> {
   static const String _prefsKey = 'xboard_auth';
 
