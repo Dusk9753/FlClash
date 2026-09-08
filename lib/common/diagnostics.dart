@@ -59,6 +59,16 @@ class Diagnostics {
     return sanitize(await file.readAsString());
   }
 
+  Future<void> clear() {
+    _writeQueue = _writeQueue.catchError((_) {}).then((_) async {
+      final file = await _file;
+      if (await file.exists()) {
+        await file.delete();
+      }
+    });
+    return _writeQueue;
+  }
+
   Future<String> exportText() async {
     final buffer = StringBuffer(await read());
     final directory = await _directoryProvider();

@@ -1,3 +1,4 @@
+import 'package:fl_clash/common/diagnostics.dart';
 import 'package:fl_clash/features/auth/auth_providers.dart';
 import 'package:fl_clash/features/xboard/xboard_client.dart';
 import 'package:flutter/material.dart';
@@ -60,6 +61,50 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _openDiagnostics() async {
+    var log = await diagnostics.read();
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> refresh() async {
+              final nextLog = await diagnostics.read();
+              if (context.mounted) setDialogState(() => log = nextLog);
+            }
+
+            Future<void> clear() async {
+              await diagnostics.clear();
+              if (context.mounted) setDialogState(() => log = '');
+            }
+
+            return AlertDialog(
+              title: const Text('调试日志'),
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    log.isEmpty ? '暂无诊断日志' : log,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: clear, child: const Text('清空')),
+                TextButton(onPressed: refresh, child: const Text('刷新')),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('关闭'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -129,6 +174,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         : () => setState(() => _isRegister = !_isRegister),
                     child: Text(_isRegister ? '已有账号？去登录' : '没有账号？去注册'),
                   ),
+                  TextButton.icon(
+                    onPressed: _openDiagnostics,
+                    icon: const Icon(Icons.bug_report_outlined),
+                    label: const Text('调试日志'),
+                  ),
                 ],
               ),
             ),
@@ -155,7 +205,8 @@ class _BrandIcon extends StatelessWidget {
       url,
       width: 64,
       height: 64,
-      errorBuilder: (_, _, _) => Icon(Icons.rocket_launch, size: 64, color: color),
+      errorBuilder: (_, _, _) =>
+          Icon(Icons.rocket_launch, size: 64, color: color),
     );
   }
 }

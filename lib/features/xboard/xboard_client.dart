@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:fl_clash/common/diagnostics.dart';
 
 import 'xboard_models.dart';
 
@@ -68,10 +69,24 @@ class XboardClient {
         }
         return body;
       } catch (e) {
+        await _recordRequestFailure(path, e);
         lastError = e;
       }
     }
     throw XboardApiException.fromError(lastError ?? Exception());
+  }
+
+  Future<void> _recordRequestFailure(String path, Object error) async {
+    final details = switch (error) {
+      DioException(:final type, :final response) =>
+        'type=$type status=${response?.statusCode ?? 'none'}',
+      _ => 'type=${error.runtimeType}',
+    };
+    try {
+      await diagnostics.record('xboard request failed path=$path $details');
+    } catch (_) {
+      // Diagnostics must never change request error handling.
+    }
   }
 
   Future<XboardAuthData> login(String email, String password) async {
