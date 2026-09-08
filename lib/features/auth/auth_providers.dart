@@ -60,14 +60,27 @@ class AuthNotifier extends AsyncNotifier<XboardAuthData?> {
     if (auth == null) {
       return;
     }
-    final client = await ref.read(xboardClientProvider.future);
-    final subscribe = await client.getSubscribe(auth);
-    if (subscribe.subscribeUrl.isEmpty) {
-      return;
+    try {
+      final client = await ref.read(xboardClientProvider.future);
+      final subscribe = await client.getSubscribe(auth);
+      if (subscribe.subscribeUrl.isEmpty) {
+        return;
+      }
+      await ref
+          .read(profilesActionProvider.notifier)
+          .addProfileFormURL(subscribe.subscribeUrl);
+    } catch (error) {
+      await handleApiError(error);
+      rethrow;
     }
-    await ref
-        .read(profilesActionProvider.notifier)
-        .addProfileFormURL(subscribe.subscribeUrl);
+  }
+
+  Future<bool> handleApiError(Object error) async {
+    if (error is! XboardApiException || !error.isSessionExpired) {
+      return false;
+    }
+    await logout();
+    return true;
   }
 
   Future<void> _save(XboardAuthData auth) async {
