@@ -3,9 +3,20 @@ import 'package:dio/dio.dart';
 import 'xboard_models.dart';
 
 class XboardApiException implements Exception {
-  const XboardApiException(this.message);
+  const XboardApiException(this.message, {this.isSessionExpired = false});
 
   final String message;
+  final bool isSessionExpired;
+
+  factory XboardApiException.fromError(Object error) {
+    if (error is DioException && error.response?.statusCode == 401) {
+      return const XboardApiException('登录已失效，请重新登录', isSessionExpired: true);
+    }
+    if (error is DioException && error.response != null) {
+      return const XboardApiException('服务暂时不可用，请稍后重试');
+    }
+    return const XboardApiException('网络异常，请稍后重试');
+  }
 
   @override
   String toString() => message;
@@ -18,24 +29,6 @@ class XboardClient {
 
   final List<String> _baseUrls;
   final Dio _dio;
-
-  String _extractMessage(Object error) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      if (data is Map && data['message'] != null) {
-        return data['message'].toString();
-      }
-      if (data is Map &&
-          data['error'] is Map &&
-          (data['error'] as Map)['message'] != null) {
-        return (data['error'] as Map)['message'].toString();
-      }
-      if (error.message != null && error.message!.isNotEmpty) {
-        return error.message!;
-      }
-    }
-    return error.toString();
-  }
 
   Future<dynamic> _request(
     String path, {
@@ -78,7 +71,7 @@ class XboardClient {
         lastError = e;
       }
     }
-    throw XboardApiException(_extractMessage(lastError ?? Exception()));
+    throw XboardApiException.fromError(lastError ?? Exception());
   }
 
   Future<XboardAuthData> login(String email, String password) async {
