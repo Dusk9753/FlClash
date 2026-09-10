@@ -94,6 +94,7 @@ jobs:
 
   macos:
     name: macOS ${{ matrix.arch }}
+    fail-fast: false
     strategy:
       matrix:
         include:
@@ -120,6 +121,8 @@ jobs:
           cache: true
       - name: Setup Xcode
         run: xcodebuild -version
+      - name: Install dependencies
+        run: flutter pub get
       - name: Build macOS package
         run: dart setup.dart macos --env "${{ inputs.app_env }}" -v
       - name: Upload macOS package
