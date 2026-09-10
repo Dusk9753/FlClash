@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/features/xboard/xboard_client.dart';
 import 'package:fl_clash/features/xboard/xboard_config.dart';
 import 'package:fl_clash/features/xboard/xboard_models.dart';
@@ -55,7 +57,21 @@ class AuthNotifier extends AsyncNotifier<XboardAuthData?> {
     return auth;
   }
 
-  Future<void> logout() async {
+  /// Signs the current account out.
+  ///
+  /// When [clearData] is true the locally downloaded subscription profile is
+  /// removed as well, so no account configuration is left on the device.
+  Future<void> logout({bool clearData = false}) async {
+    if (clearData) {
+      try {
+        await ref.read(profilesActionProvider.notifier).clearSystemProfiles();
+      } catch (error) {
+        commonPrint.log(
+          'Failed to clear system profiles: $error',
+          logLevel: LogLevel.warning,
+        );
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);
     state = const AsyncData(null);

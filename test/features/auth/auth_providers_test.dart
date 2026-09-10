@@ -63,4 +63,54 @@ void main() {
     expect(currentAuth?.authData, auth.authData);
     expect(currentAuth?.isAdmin, auth.isAdmin);
   });
+
+  test('clears the session and profile markers on explicit logout', () async {
+    const auth = XboardAuthData(
+      token: 'token',
+      authData: 'auth',
+      isAdmin: false,
+    );
+    SharedPreferences.setMockInitialValues({
+      'xboard_auth': jsonEncode(auth.toJson()),
+    });
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container.read(authNotifierProvider.future);
+    await container.read(authNotifierProvider.notifier).logout(clearData: true);
+
+    expect(container.read(authNotifierProvider).value, isNull);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.containsKey('xboard_auth'), isFalse);
+  });
+
+  test('keeps the downloaded profile markers when the session expires', () async {
+    const auth = XboardAuthData(
+      token: 'token',
+      authData: 'auth',
+      isAdmin: false,
+    );
+    SharedPreferences.setMockInitialValues({
+      'xboard_auth': jsonEncode(auth.toJson()),
+      'xboard_system_profile_id': 7,
+      'xboard_system_profile_url': 'https://example.com/sub',
+    });
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container.read(authNotifierProvider.future);
+    final handled = await container
+        .read(authNotifierProvider.notifier)
+        .handleApiError(
+          const XboardApiException('登录已失效，请重新登录', isSessionExpired: true),
+        );
+
+    expect(handled, isTrue);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getInt('xboard_system_profile_id'), 7);
+    expect(
+      prefs.getString('xboard_system_profile_url'),
+      'https://example.com/sub',
+    );
+  });
 }

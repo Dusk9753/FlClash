@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
+import 'package:fl_clash/features/auth/auth_providers.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
@@ -54,6 +55,13 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     );
   }
 
+  List<Widget> _getAccountList() {
+    return generateSection(
+      title: '账户',
+      items: [const _LogoutItem()],
+    );
+  }
+
   List<Widget> _getOtherList(bool enableDeveloperMode) {
     return generateSection(
       title: context.appLocalizations.other,
@@ -86,6 +94,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       ),
     );
     final items = [
+      ..._getAccountList(),
       Consumer(
         builder: (_, ref, _) {
           final state = ref.watch(moreToolsSelectorStateProvider);
@@ -260,6 +269,65 @@ class _SettingItem extends StatelessWidget {
       title: Text(context.appLocalizations.application),
       subtitle: Text(context.appLocalizations.applicationDesc),
       widget: const ApplicationSettingView(),
+    );
+  }
+}
+
+class _LogoutItem extends ConsumerStatefulWidget {
+  const _LogoutItem();
+
+  @override
+  ConsumerState<_LogoutItem> createState() => _LogoutItemState();
+}
+
+class _LogoutItemState extends ConsumerState<_LogoutItem> {
+  bool _submitting = false;
+
+  Future<void> _confirmAndLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('退出登录'),
+        content: const Text('退出后将清除本机的账户信息与订阅配置，需要重新登录才能继续使用。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('退出登录'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await ref.read(authNotifierProvider.notifier).logout(clearData: true);
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem(
+      leading: const Icon(Icons.logout),
+      title: const Text('退出登录'),
+      subtitle: const Text('清除本机账户信息与订阅配置'),
+      trailing: _submitting
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.chevron_right),
+      onTap: _submitting ? null : _confirmAndLogout,
     );
   }
 }

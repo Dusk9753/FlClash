@@ -15,6 +15,11 @@ on:
         default: arm64
         type: choice
         options: [arm64, arm, amd64]
+      include_macos:
+        description: Also build macOS packages
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -94,6 +99,7 @@ jobs:
 
   macos:
     name: macOS ${{ matrix.arch }}
+    if: ${{ inputs.include_macos }}
     strategy:
       fail-fast: false
       matrix:

@@ -3,6 +3,7 @@ part of '../action.dart';
 @Riverpod(keepAlive: true)
 class ProfilesAction extends _$ProfilesAction {
   static const String _systemProfileIdPrefsKey = 'xboard_system_profile_id';
+  static const String _systemProfileUrlPrefsKey = 'xboard_system_profile_url';
 
   @override
   void build() {}
@@ -29,6 +30,7 @@ class ProfilesAction extends _$ProfilesAction {
       if (prefs.getInt(_systemProfileIdPrefsKey) != existingProfile.id) {
         await prefs.setInt(_systemProfileIdPrefsKey, existingProfile.id);
       }
+      await prefs.setString(_systemProfileUrlPrefsKey, url);
       await updateProfile(
         existingProfile.copyWith(url: url, autoUpdate: true),
         showLoading: true,
@@ -46,6 +48,34 @@ class ProfilesAction extends _$ProfilesAction {
     }
     putProfile(createdProfile);
     await prefs.setInt(_systemProfileIdPrefsKey, createdProfile.id);
+    await prefs.setString(_systemProfileUrlPrefsKey, url);
+  }
+
+  /// Removes the profile(s) downloaded from the signed-in account's
+  /// subscription, so signing out leaves no account configuration behind.
+  Future<void> clearSystemProfiles() async {
+    final prefs = await SharedPreferences.getInstance();
+    final profileId = prefs.getInt(_systemProfileIdPrefsKey);
+    final profileUrl = prefs.getString(_systemProfileUrlPrefsKey);
+    await prefs.remove(_systemProfileIdPrefsKey);
+    await prefs.remove(_systemProfileUrlPrefsKey);
+    if (profileId == null && (profileUrl == null || profileUrl.isEmpty)) {
+      return;
+    }
+    final targetIds = ref
+        .read(profilesProvider)
+        .where(
+          (profile) =>
+              profile.id == profileId ||
+              (profileUrl != null &&
+                  profileUrl.isNotEmpty &&
+                  profile.url == profileUrl),
+        )
+        .map((profile) => profile.id)
+        .toList();
+    for (final id in targetIds) {
+      await deleteProfile(id);
+    }
   }
 
   Future<void> deleteProfile(int id) async {
