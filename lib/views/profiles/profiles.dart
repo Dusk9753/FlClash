@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'add.dart';
 import 'edit.dart';
 import 'preview.dart';
 
@@ -27,20 +26,6 @@ class _ProfilesViewState extends State<ProfilesView> {
   @override
   void initState() {
     super.initState();
-  }
-
-  void _handleShowAddExtendPage() {
-    showExtend(
-      globalState.navigatorKey.currentState!.context,
-      builder: (_) {
-        return AdaptiveSheetScaffold(
-          body: AddProfileView(
-            context: globalState.navigatorKey.currentState!.context,
-          ),
-          title: context.appLocalizations.addProfile,
-        );
-      },
-    );
   }
 
   Future<void> _updateProfiles(List<Profile> profiles) async {
@@ -93,14 +78,6 @@ class _ProfilesViewState extends State<ProfilesView> {
         : [];
   }
 
-  Widget _buildFAB() {
-    return CommonFloatingActionButton(
-      onPressed: _handleShowAddExtendPage,
-      icon: const Icon(Icons.add),
-      label: context.appLocalizations.addProfile,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer(
@@ -112,7 +89,6 @@ class _ProfilesViewState extends State<ProfilesView> {
         return CommonScaffold(
           isLoading: isLoading,
           title: appLocalizations.profiles,
-          floatingActionButton: _buildFAB(),
           actions: _buildActions(state.profiles),
           body: state.profiles.isEmpty
               ? NullStatus(

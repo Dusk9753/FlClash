@@ -74,7 +74,7 @@ class AuthNotifier extends AsyncNotifier<XboardAuthData?> {
       }
       await ref
           .read(profilesActionProvider.notifier)
-          .addProfileFormURL(subscribe.subscribeUrl);
+          .syncSystemProfile(subscribe.subscribeUrl);
     } catch (error) {
       await handleApiError(error);
       rethrow;

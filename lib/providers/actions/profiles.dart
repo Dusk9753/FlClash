@@ -2,6 +2,8 @@ part of '../action.dart';
 
 @Riverpod(keepAlive: true)
 class ProfilesAction extends _$ProfilesAction {
+  static const String _systemProfileIdPrefsKey = 'xboard_system_profile_id';
+
   @override
   void build() {}
 
@@ -17,7 +19,40 @@ class ProfilesAction extends _$ProfilesAction {
     }
   }
 
+  Future<void> syncSystemProfile(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    final profileId = prefs.getInt(_systemProfileIdPrefsKey);
+    final profiles = ref.read(profilesProvider);
+    final existingProfile = profiles.getProfile(profileId) ??
+        profiles.where((profile) => profile.url == url).firstOrNull;
+    if (existingProfile != null) {
+      if (prefs.getInt(_systemProfileIdPrefsKey) != existingProfile.id) {
+        await prefs.setInt(_systemProfileIdPrefsKey, existingProfile.id);
+      }
+      await updateProfile(
+        existingProfile.copyWith(url: url, autoUpdate: true),
+        showLoading: true,
+      );
+      return;
+    }
+
+    final createdProfile = await globalState.loadingRun(
+      tag: LoadingTag.profiles,
+      () => Profile.normal(url: url).update(),
+      title: currentAppLocalizations.profiles,
+    );
+    if (createdProfile == null) {
+      return;
+    }
+    putProfile(createdProfile);
+    await prefs.setInt(_systemProfileIdPrefsKey, createdProfile.id);
+  }
+
   Future<void> deleteProfile(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getInt(_systemProfileIdPrefsKey) == id) {
+      await prefs.remove(_systemProfileIdPrefsKey);
+    }
     await ref.read(profilesProvider.notifier).del(id);
     await clearEffect(id);
     final currentProfileId = ref.read(currentProfileIdProvider);
@@ -84,52 +119,11 @@ class ProfilesAction extends _$ProfilesAction {
     }
   }
 
-  Future<void> addProfileFormFile() async {
-    final platformFile = await globalState.safeRun(picker.pickerFile);
-    if (platformFile == null) return;
-    final bytes = await platformFile.readBytes();
-    globalState.navigatorKey.currentState?.popUntil((route) => route.isFirst);
-    ref.read(currentPageLabelProvider.notifier).toProfiles();
-    final profile = await globalState.loadingRun(
-      tag: LoadingTag.profiles,
-      () async {
-        return Profile.normal(label: platformFile.name).saveFile(bytes);
-      },
-      title: currentAppLocalizations.addProfile,
-    );
-    if (profile != null) {
-      putProfile(profile);
-    }
-  }
-
-  Future<void> addProfileFormURL(String url) async {
-    if (globalState.navigatorKey.currentState?.canPop() ?? false) {
-      globalState.navigatorKey.currentState?.popUntil((route) => route.isFirst);
-    }
-    ref.read(currentPageLabelProvider.notifier).value = PageLabel.profiles;
-    final profile = await globalState.loadingRun(
-      tag: LoadingTag.profiles,
-      () async {
-        return Profile.normal(url: url).update();
-      },
-      title: currentAppLocalizations.addProfile,
-    );
-    if (profile != null) {
-      putProfile(profile);
-    }
-  }
-
   void setProfileAndAutoApply(Profile profile) {
     ref.read(profilesProvider.notifier).put(profile);
     if (profile.id == ref.read(currentProfileIdProvider)) {
       ref.read(setupActionProvider.notifier).applyProfileDebounce();
     }
-  }
-
-  Future<void> addProfileFormQrCode() async {
-    final url = await globalState.safeRun(picker.pickerConfigQRCode);
-    if (url == null) return;
-    addProfileFormURL(url);
   }
 
   void reorder(List<Profile> profiles) {

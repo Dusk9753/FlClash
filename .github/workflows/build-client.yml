@@ -91,3 +91,40 @@ jobs:
           name: xiaohuojian-windows-amd64
           path: dist/*windows*zip
           if-no-files-found: error
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: amd64
+          - runner: macos-latest
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.12'
+          cache: true
+      - name: Setup Xcode
+        run: xcodebuild -version
+      - name: Build macOS package
+        run: dart setup.dart macos --env "${{ inputs.app_env }}" -v
+      - name: Upload macOS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaohuojian-macos-${{ matrix.arch }}
+          path: dist/*macos-${{ matrix.arch }}.dmg
+          if-no-files-found: error

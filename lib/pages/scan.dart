@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:fl_clash/common/color.dart';
-import 'package:fl_clash/providers/action.dart';
-import 'package:fl_clash/state.dart';
 import 'package:fl_clash/widgets/activate_box.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -131,23 +129,6 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                 },
               ),
             ],
-          ),
-          Container(
-            margin: const EdgeInsets.only(bottom: 32),
-            alignment: Alignment.bottomCenter,
-            child: IconButton(
-              color: Colors.white,
-              style: IconButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.grey,
-              ),
-              padding: const EdgeInsets.all(16),
-              iconSize: 32.0,
-              onPressed: globalState.container
-                  .read(profilesActionProvider.notifier)
-                  .addProfileFormQrCode,
-              icon: const Icon(Icons.photo_camera_back),
-            ),
           ),
         ],
       ),
