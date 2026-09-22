@@ -1,0 +1,52 @@
+name: Build Lodin Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'lodin-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: stable
+          cache: true
+
+      - name: Install build tools
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Windows bundle
+        run: dart setup.dart windows
+
+      - name: Package installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $config = Get-Content windows/packaging/exe/make_config.yaml -Raw
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)' | ForEach-Object { $_.Matches.Groups[1].Value })
+          if (-not $version) { throw 'version not found' }
+          dart run flutter_distributor package --platform windows --targets exe
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Get-ChildItem -Recurse -File -Include *.exe,*.zip | Where-Object { $_.FullName -notmatch 'build\\windows\\x64\\runner\\Release\\data' } | Copy-Item -Destination artifacts -Force
+          if (-not (Get-ChildItem artifacts -File)) { throw 'no Windows artifact found' }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lodin-windows
+          path: artifacts/*
+          if-no-files-found: error
