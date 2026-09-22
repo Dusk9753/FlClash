@@ -5,7 +5,7 @@ publisher: 小火箭加速
 display_name: 小火箭加速
 executable_name: Xiaohuojian.exe
 output_base_file_name: Xiaohuojian.exe
-setup_icon_file: ..\windows\runner\resources\app_icon.ico
+setup_icon_file: windows\runner\resources\app_icon.ico
 locales:
   - lang: zh
     file: ..\windows\packaging\exe\ChineseSimplified.isl
