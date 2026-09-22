@@ -29,6 +29,15 @@ case "$TARGET" in
   windows)
     "$FLUTTER_BIN" pub get
     "$FLUTTER_BIN" build windows --release --dart-define=APP_ENV="$ENVIRONMENT"
+    WINDOWS_RELEASE_DIR="$ROOT_DIR/build/windows/x64/runner/Release"
+    WINDOWS_LAUNCHER="$WINDOWS_RELEASE_DIR/start-xiaohuojian.bat"
+    cat > "$WINDOWS_LAUNCHER" <<'EOF'
+@echo off
+setlocal
+cd /d "%~dp0"
+start "Xiaohuojian" "%~dp0Xiaohuojian.exe"
+EOF
+    cp "$WINDOWS_LAUNCHER" "$ROOT_DIR/dist/start-xiaohuojian.bat"
     if command -v zip >/dev/null 2>&1; then
       (cd build/windows/x64/runner && zip -qr "$ROOT_DIR/dist/xiaohuojian-windows-amd64.zip" Release)
     else
