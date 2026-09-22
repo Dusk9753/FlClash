@@ -1,4 +1,5 @@
 name: Build Lodin Windows
+# workflow-discovery-refresh
 
 on:
   workflow_dispatch:
