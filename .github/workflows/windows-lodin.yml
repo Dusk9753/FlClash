@@ -19,7 +19,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.47.1'
+          flutter-version: '3.44.4'
           channel: stable
           cache: true
 
@@ -40,9 +40,8 @@ jobs:
           $config = Get-Content windows/packaging/exe/make_config.yaml -Raw
           $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)' | ForEach-Object { $_.Matches.Groups[1].Value })
           if (-not $version) { throw 'version not found' }
-          dart run flutter_distributor package --platform windows --targets exe
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
-          Get-ChildItem -Recurse -File -Include *.exe,*.zip | Where-Object { $_.FullName -notmatch 'build\\windows\\x64\\runner\\Release\\data' } | Copy-Item -Destination artifacts -Force
+          Get-ChildItem -Recurse -File -Include *.zip,*.exe | Where-Object { $_.FullName -notmatch 'build\\windows\\x64\\runner\\Release\\data' } | Copy-Item -Destination artifacts -Force
           if (-not (Get-ChildItem artifacts -File)) { throw 'no Windows artifact found' }
 
       - uses: actions/upload-artifact@v4
