@@ -39,9 +39,9 @@ start "Xiaohuojian" "%~dp0Xiaohuojian.exe"
 EOF
     cp "$WINDOWS_LAUNCHER" "$ROOT_DIR/dist/start-xiaohuojian.bat"
     if command -v zip >/dev/null 2>&1; then
-      (cd build/windows/x64/runner && zip -qr "$ROOT_DIR/dist/xiaohuojian-windows-amd64.zip" Release)
+      (cd "$WINDOWS_RELEASE_DIR" && zip -qr "$ROOT_DIR/dist/xiaohuojian-windows-amd64.zip" .)
     else
-      powershell -NoProfile -Command "Compress-Archive -Path build/windows/x64/runner/Release -DestinationPath dist/xiaohuojian-windows-amd64.zip -Force"
+      powershell -NoProfile -Command "Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath dist/xiaohuojian-windows-amd64.zip -Force"
     fi
     ;;
   *)
