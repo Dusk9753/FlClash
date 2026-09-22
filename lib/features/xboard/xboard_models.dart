@@ -172,12 +172,24 @@ class XboardPaymentMethod {
 
   factory XboardPaymentMethod.fromJson(Map<String, dynamic> json) =>
       XboardPaymentMethod(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        name: json['name']?.toString() ?? '支付方式',
+        id: _parseInt(json['num'] ?? json['id'] ?? json['method']),
+        name:
+            (json['name'] ?? json['title'] ?? json['label'])?.toString() ??
+            '支付方式',
         icon: json['icon']?.toString() ?? '',
-        fixedFee: (json['handling_fee_fixed'] as num?)?.toInt() ?? 0,
-        percentFee: (json['handling_fee_percent'] as num?)?.toDouble() ?? 0,
+        fixedFee: _parseInt(json['handling_fee_fixed']),
+        percentFee: _parseDouble(json['handling_fee_percent']),
       );
+
+  static int _parseInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double _parseDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
 }
 
 class XboardCheckoutResult {

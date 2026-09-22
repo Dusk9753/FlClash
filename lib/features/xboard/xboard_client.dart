@@ -197,14 +197,23 @@ class XboardClient {
       '/user/order/getPaymentMethod',
       authData: auth.authData,
     );
-    if (data is! List) throw const XboardApiException('支付方式响应格式错误');
-    return data
+    final methods = data is List
+        ? data
+        : data is Map && data['data'] is List
+        ? data['data'] as List
+        : const <dynamic>[];
+    final result = methods
         .whereType<Map>()
         .map(
           (item) =>
               XboardPaymentMethod.fromJson(Map<String, dynamic>.from(item)),
         )
+        .where((method) => method.id > 0)
         .toList();
+    if (data is! List && !(data is Map && data['data'] is List)) {
+      throw const XboardApiException('支付方式响应格式错误');
+    }
+    return result;
   }
 
   Future<XboardCheckoutResult> checkoutOrder(
@@ -239,6 +248,24 @@ class XboardClient {
       method: 'POST',
       authData: auth.authData,
       data: {'trade_no': tradeNo},
+    );
+  }
+
+  Future<void> submitTicket(
+    XboardAuthData auth, {
+    required String subject,
+    required String message,
+    int level = 1,
+  }) async {
+    await _request(
+      '/user/ticket/save',
+      method: 'POST',
+      authData: auth.authData,
+      data: <String, dynamic>{
+        'subject': subject,
+        'message': message,
+        'level': level,
+      },
     );
   }
 
